@@ -7,6 +7,7 @@ use Time::Piece();
 use Time::Seconds;
 use HTTP::Request::Common;
 use LWP::UserAgent;
+use Web::Scraper;
 
 our $user = "admin";
 our $pass = "password";
@@ -21,6 +22,8 @@ if($ARGV[0] eq "start"){
 }elsif($ARGV[0] eq "timer_off"){
 	print "ECO timer off.\n";
 	&eco_timer_off;
+}elsif($ARGV[0] eq "status"){
+	print "ECO mode status is ", &eco_status ? "on" : "off", ".\n";
 }
 
 sub eco_mode{
@@ -95,6 +98,21 @@ sub eco_timer_off{
 	$request->authorization_basic($user, $pass);
 	$res = $ua->request($request)->as_string;
 	#print "Save ECO mode configuration.\n";
+}
+
+sub eco_status{
+	my $scraper = scraper{
+		process "#ECO_MODE_STATUS", "status" => '@value';
+	};
+	my $ua = LWP::UserAgent->new;
+	my $request = GET("$router_url/index.cgi/eco_main");
+	$request->authorization_basic($user, $pass);
+	my $result = $scraper->scrape($ua->request($request));
+	#print $result->{status}, "\n";
+	if($result->{status} eq "true"){
+		return 1;
+	}
+	return 0;
 }
 
 1;
